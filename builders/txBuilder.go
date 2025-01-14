@@ -111,6 +111,37 @@ func (builder *txBuilder) ApplyGuardianSignature(
 	return err
 }
 
+// ApplyRelayerSignature applies the relayer signature over the transaction.
+// Does a basic check for the relayer address.
+func (builder *txBuilder) ApplyRelayerSignature(
+	relayerCryptoHolder core.CryptoComponentsHolder,
+	tx *transaction.FrontendTransaction,
+) error {
+	txRelayerAddrBytes, err := core.AddressPublicKeyConverter.Decode(tx.RelayerAddr)
+	if err != nil {
+		return err
+	}
+
+	relayerPubKeyBytes, err := relayerCryptoHolder.GetPublicKey().ToByteArray()
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(txRelayerAddrBytes, relayerPubKeyBytes) {
+		return ErrRelayerDoesNotMatch
+	}
+
+	unsignedTx := TransactionToUnsignedTx(tx)
+	relayerSignature, err := builder.signTx(unsignedTx, relayerCryptoHolder)
+	if err != nil {
+		return err
+	}
+
+	tx.RelayerSignature = hex.EncodeToString(relayerSignature)
+
+	return err
+}
+
 // ComputeTxHash will return the hash of the provided transaction. It assumes that the transaction is already signed,
 // otherwise it will return an error.
 func (builder *txBuilder) ComputeTxHash(tx *transaction.FrontendTransaction) ([]byte, error) {
@@ -166,6 +197,19 @@ func transactionToNodeTransaction(tx *transaction.FrontendTransaction) (*transac
 		}
 	}
 
+	var relayerAddrBytes, relayerSigBytes []byte
+	if len(tx.RelayerAddr) > 0 {
+		relayerAddrBytes, err = core.AddressPublicKeyConverter.Decode(tx.RelayerAddr)
+		if err != nil {
+			return nil, err
+		}
+
+		relayerSigBytes, err = hex.DecodeString(tx.RelayerSignature)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &transaction.Transaction{
 		Nonce:             tx.Nonce,
 		Value:             valueBI,
@@ -180,6 +224,8 @@ func transactionToNodeTransaction(tx *transaction.FrontendTransaction) (*transac
 		Options:           tx.Options,
 		GuardianAddr:      guardianAddrBytes,
 		GuardianSignature: guardianSigBytes,
+		RelayerAddr:       relayerAddrBytes,
+		RelayerSignature:  relayerSigBytes,
 	}, nil
 }
 
@@ -188,6 +234,7 @@ func TransactionToUnsignedTx(tx *transaction.FrontendTransaction) *transaction.F
 	unsignedTx := *tx
 	unsignedTx.Signature = ""
 	unsignedTx.GuardianSignature = ""
+	unsignedTx.RelayerSignature = ""
 
 	return &unsignedTx
 }

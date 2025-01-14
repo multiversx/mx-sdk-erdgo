@@ -126,7 +126,7 @@ func signTransaction(
 	cryptoHolderUser core.CryptoComponentsHolder,
 	cryptoHolderGuardian core.CryptoComponentsHolder,
 	tx *transaction.FrontendTransaction,
-	builder interactors.GuardedTxBuilder,
+	builder interactors.TxBuilder,
 ) (sigUser []byte, sigGuardian []byte, err error) {
 	err = builder.ApplyUserSignature(cryptoHolderUser, tx)
 	if err != nil {

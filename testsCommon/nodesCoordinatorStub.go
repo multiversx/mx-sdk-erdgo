@@ -7,16 +7,17 @@ import (
 
 // NodesCoordinatorStub -
 type NodesCoordinatorStub struct {
-	ComputeValidatorsGroupCalled                func(randomness []byte, round uint64, shardId uint32, epoch uint32) ([]nodesCoordinator.Validator, error)
-	GetValidatorsPublicKeysCalled               func(randomness []byte, round uint64, shardId uint32, epoch uint32) ([]string, error)
-	GetValidatorsRewardsAddressesCalled         func(randomness []byte, round uint64, shardId uint32, epoch uint32) ([]string, error)
-	GetValidatorWithPublicKeyCalled             func(publicKey []byte) (validator nodesCoordinator.Validator, shardId uint32, err error)
-	GetAllValidatorsPublicKeysCalled            func() (map[uint32][][]byte, error)
-	GetWaitingEpochsLeftForPublicKeyCalled      func(publicKey []byte) (uint32, error)
-	ConsensusGroupSizeCalled                    func(shardID uint32) int
-	SetNodesConfigFromValidatorsInfoCalled      func(epoch uint32, randomness []byte, validatorsInfo []*state.ShardValidatorInfo) error
-	IsEpochInConfigCalled                       func(epoch uint32) bool
-	GetAllShuffledOutValidatorsPublicKeysCalled func(epoch uint32) (map[uint32][][]byte, error)
+	ComputeValidatorsGroupCalled                      func(randomness []byte, round uint64, shardId uint32, epoch uint32) ([]nodesCoordinator.Validator, error)
+	GetValidatorsPublicKeysCalled                     func(randomness []byte, round uint64, shardId uint32, epoch uint32) ([]string, error)
+	GetValidatorsRewardsAddressesCalled               func(randomness []byte, round uint64, shardId uint32, epoch uint32) ([]string, error)
+	GetValidatorWithPublicKeyCalled                   func(publicKey []byte) (validator nodesCoordinator.Validator, shardId uint32, err error)
+	GetAllValidatorsPublicKeysCalled                  func() (map[uint32][][]byte, error)
+	GetWaitingEpochsLeftForPublicKeyCalled            func(publicKey []byte) (uint32, error)
+	ConsensusGroupSizeCalled                          func(shardID uint32) int
+	SetNodesConfigFromValidatorsInfoCalled            func(epoch uint32, randomness []byte, validatorsInfo []*state.ShardValidatorInfo) error
+	IsEpochInConfigCalled                             func(epoch uint32) bool
+	GetAllShuffledOutValidatorsPublicKeysCalled       func(epoch uint32) (map[uint32][][]byte, error)
+	GetShuffledOutToAuctionValidatorsPublicKeysCalled func(epoch uint32) (map[uint32][][]byte, error)
 }
 
 // GetChance -
@@ -191,6 +192,14 @@ func (ncm *NodesCoordinatorStub) IsEpochInConfig(epoch uint32) bool {
 func (ncm *NodesCoordinatorStub) GetAllShuffledOutValidatorsPublicKeys(epoch uint32) (map[uint32][][]byte, error) {
 	if ncm.GetAllShuffledOutValidatorsPublicKeysCalled != nil {
 		return ncm.GetAllShuffledOutValidatorsPublicKeysCalled(epoch)
+	}
+	return make(map[uint32][][]byte), nil
+}
+
+// GetShuffledOutToAuctionValidatorsPublicKeys -
+func (ncm *NodesCoordinatorStub) GetShuffledOutToAuctionValidatorsPublicKeys(epoch uint32) (map[uint32][][]byte, error) {
+	if ncm.GetShuffledOutToAuctionValidatorsPublicKeysCalled != nil {
+		return ncm.GetShuffledOutToAuctionValidatorsPublicKeysCalled(epoch)
 	}
 	return make(map[uint32][][]byte), nil
 }

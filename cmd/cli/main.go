@@ -106,12 +106,24 @@ VERSION:
 		Destination: &argsConfig.proxy,
 	}
 
+	relayedTxBy = cli.StringFlag{
+		Name:        "relayedTxBy",
+		Usage:       "If used, will set the relayer to the given one. Options: alice, bob, eve, charlie",
+		Destination: &argsConfig.relayedTxBy,
+	}
+
+	relayerSigned = cli.BoolFlag{
+		Name:        "relayerSigned",
+		Usage:       "If set the relayer will also sign the transaction. This works only if also guardedTxBy is set",
+		Destination: &argsConfig.relayerSigned,
+	}
+
 	argsConfig = &cfg{}
 	log        = logger.GetOrCreate("mx-sdk-go/cmd/cli")
 )
 
 var homePath = os.Getenv("HOME")
-var pathGeneratedWallets = homePath + "/MultiversX/testnet/filegen/output/walletKey.pem"
+var pathGeneratedWallets = homePath + "/dev/testnet-local/sandbox/node/config/walletKey.pem"
 var suite = ed25519.NewEd25519()
 var keyGen = signing.NewKeyGenerator(suite)
 
@@ -139,11 +151,14 @@ type cfg struct {
 	value          string
 	gasLimit       uint64
 	proxy          string
+	relayerSigned  bool
+	relayedTxBy    string
 }
 
 type selectedOptions struct {
 	senderCryptoHolder   core.CryptoComponentsHolder
 	guardianCryptoHolder core.CryptoComponentsHolder
+	relayerCryptoHolder  core.CryptoComponentsHolder
 
 	guardianAddress core.AddressHandler
 	tx              transaction.FrontendTransaction
@@ -184,6 +199,8 @@ func main() {
 		send,
 		guardianSigned,
 		proxy,
+		relayerSigned,
+		relayedTxBy,
 	}
 
 	app.Action = func(_ *cli.Context) error {
@@ -250,6 +267,11 @@ func processCommand(td *testData, proxy workflows.ProxyHandler, config *data.Net
 	}
 
 	err = setGuardedTxByOption(td, options)
+	if err != nil {
+		return nil, err
+	}
+
+	err = setRelayedTxByOption(td, options)
 	if err != nil {
 		return nil, err
 	}
@@ -326,6 +348,27 @@ func setGuardedTxByOption(td *testData, options *selectedOptions) error {
 			return err
 		}
 		options.tx.Options = maskGuardedTx
+	}
+
+	return nil
+}
+
+func setRelayedTxByOption(td *testData, options *selectedOptions) error {
+	selectedAddress, sk, err := selectAddressAndSkFromString(td, argsConfig.relayedTxBy)
+	if err != nil {
+		return err
+	}
+
+	if selectedAddress != nil {
+		options.tx.RelayerAddr, err = selectedAddress.AddressAsBech32String()
+		if err != nil {
+			return err
+		}
+
+		options.relayerCryptoHolder, err = cryptoProvider.NewCryptoComponentsHolder(keyGen, sk)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -420,10 +463,12 @@ func getDefaultOptions(td *testData, ep workflows.ProxyHandler, netConfigs *data
 
 	aliceCryptoHolder, _ := cryptoProvider.NewCryptoComponentsHolder(keyGen, td.skAlice)
 	bobCryptoHolder, _ := cryptoProvider.NewCryptoComponentsHolder(keyGen, td.skBob)
+	charlieCryptoHolder, _ := cryptoProvider.NewCryptoComponentsHolder(keyGen, td.skCharlie)
 
 	return &selectedOptions{
-		senderCryptoHolder:   aliceCryptoHolder, // default if nothing provided
-		guardianCryptoHolder: bobCryptoHolder,   // default if nothing provided
+		senderCryptoHolder:   aliceCryptoHolder,   // default if nothing provided
+		guardianCryptoHolder: bobCryptoHolder,     // default if nothing provided
+		relayerCryptoHolder:  charlieCryptoHolder, // default if nothing provided
 		tx:                   tx,
 		guardianAddress:      td.addressBob,
 	}, nil
@@ -446,6 +491,15 @@ func generateAndSendTransaction(options *selectedOptions, proxy interactors.Prox
 	if err != nil {
 		log.Error("error signing transaction", "error", err)
 		return err
+	}
+
+	argsConfig.relayerSigned = true
+	if len(argsConfig.relayedTxBy) > 0 && argsConfig.relayerSigned {
+		err = ti.ApplyRelayerSignature(options.relayerCryptoHolder, &copiedTx)
+		if err != nil {
+			log.Error("error applying relayer signature", "error", err)
+			return err
+		}
 	}
 
 	if len(argsConfig.guardedTxBy) > 0 && argsConfig.guardianSigned {
