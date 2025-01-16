@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/multiversx/mx-chain-core-go/data/transaction"
+
 	"github.com/multiversx/mx-sdk-go/core"
 	"github.com/multiversx/mx-sdk-go/data"
 )
@@ -75,6 +76,9 @@ func (rtb *relayedTxV2Builder) Build() (*transaction.FrontendTransaction, error)
 	if rtb.innerTransaction.GasLimit != 0 {
 		return nil, ErrGasLimitForInnerTransactionV2ShouldBeZero
 	}
+	if rtb.innerTransaction.Value != "0" {
+		return nil, ErrInvalidValueForInnerTransaction
+	}
 
 	innerTxHex, err := prepareInnerTxForRelayV2(rtb.innerTransaction)
 	if err != nil {
@@ -86,7 +90,7 @@ func (rtb *relayedTxV2Builder) Build() (*transaction.FrontendTransaction, error)
 
 	relayedTx := &transaction.FrontendTransaction{
 		Nonce:    rtb.relayerAccount.Nonce,
-		Value:    "0",
+		Value:    rtb.innerTransaction.Value,
 		Receiver: rtb.innerTransaction.Sender,
 		Sender:   rtb.relayerAccount.Address,
 		GasPrice: rtb.innerTransaction.GasPrice,
