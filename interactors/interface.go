@@ -22,13 +22,8 @@ type Proxy interface {
 // TxBuilder defines the component able to build & sign a transaction
 type TxBuilder interface {
 	ApplyUserSignature(cryptoHolder core.CryptoComponentsHolder, tx *transaction.FrontendTransaction) error
-	IsInterfaceNil() bool
-}
-
-// GuardedTxBuilder defines the component able to build and sign a guarded transaction
-type GuardedTxBuilder interface {
-	ApplyUserSignature(cryptoHolder core.CryptoComponentsHolder, tx *transaction.FrontendTransaction) error
 	ApplyGuardianSignature(cryptoHolderGuardian core.CryptoComponentsHolder, tx *transaction.FrontendTransaction) error
+	ApplyRelayerSignature(relayerCryptoHolder core.CryptoComponentsHolder, tx *transaction.FrontendTransaction) error
 	IsInterfaceNil() bool
 }
 

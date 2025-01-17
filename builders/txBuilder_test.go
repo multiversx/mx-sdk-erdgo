@@ -222,3 +222,67 @@ func TestTxBuilder_ApplyUserSignatureAndGenerateWithTxGuardian(t *testing.T) {
 		require.Nil(t, err)
 	})
 }
+
+func TestTxBuilder_ApplyRelayerSignature(t *testing.T) {
+	t.Parallel()
+
+	relayerAddress := "erd1p5jgz605m47fq5mlqklpcjth9hdl3au53dg8a5tlkgegfnep3d7stdk09x"
+	skRelayer, err := hex.DecodeString("6ae10fed53a84029e53e35afdbe083688eea0917a09a9431951dd42fd4da14c40d248169f4dd7c90537f05be1c49772ddbf8f7948b507ed17fb23284cf218b7d")
+	require.Nil(t, err)
+	cryptoHolderRelayer, err := cryptoProvider.NewCryptoComponentsHolder(keyGen, skRelayer)
+	require.Nil(t, err)
+
+	senderAddress := "erd1lta2vgd0tkeqqadkvgef73y0efs6n3xe5ss589ufhvmt6tcur8kq34qkwr"
+	sk, err := hex.DecodeString("28654d9264f55f18d810bb88617e22c117df94fa684dfe341a511a72dfbf2b68")
+	require.Nil(t, err)
+	cryptoHolder, err := cryptoProvider.NewCryptoComponentsHolder(keyGen, sk)
+	require.Nil(t, err)
+
+	tx := transaction.FrontendTransaction{
+		Nonce:       1,
+		Value:       "1000000000000000000",
+		Receiver:    "erd1p72ru5zcdsvgkkcm9swtvw2zy5epylwgv8vwquptkw7ga7pfvk7qz7snzw",
+		GasPrice:    1000000000,
+		GasLimit:    100000,
+		Data:        []byte("gift"),
+		ChainID:     "T",
+		Version:     uint32(2),
+		RelayerAddr: relayerAddress,
+	}
+
+	t.Run("no relayer address should fail", func(t *testing.T) {
+		txLocal := tx
+		txLocal.RelayerAddr = ""
+		tb, _ := NewTxBuilder(cryptoProvider.NewSigner())
+		_ = tb.ApplyUserSignature(cryptoHolder, &txLocal)
+
+		err = tb.ApplyRelayerSignature(cryptoHolderRelayer, &txLocal)
+		require.NotNil(t, err)
+	})
+	t.Run("different relayer address should fail", func(t *testing.T) {
+		txLocal := tx
+		txLocal.RelayerAddr = senderAddress
+		tb, _ := NewTxBuilder(cryptoProvider.NewSigner())
+		_ = tb.ApplyUserSignature(cryptoHolder, &txLocal)
+
+		err = tb.ApplyRelayerSignature(cryptoHolderRelayer, &txLocal)
+		require.Equal(t, ErrRelayerDoesNotMatch, err)
+	})
+	t.Run("correct relayer should work", func(t *testing.T) {
+		txLocal := tx
+		tb, _ := NewTxBuilder(cryptoProvider.NewSigner())
+		_ = tb.ApplyUserSignature(cryptoHolder, &txLocal)
+
+		err = tb.ApplyRelayerSignature(cryptoHolderRelayer, &txLocal)
+		require.Nil(t, err)
+	})
+	t.Run("correct relayer and sign with hash ok", func(t *testing.T) {
+		txLocal := tx
+		txLocal.Options |= transaction.MaskSignedWithHash
+		tb, _ := NewTxBuilder(cryptoProvider.NewSigner())
+		_ = tb.ApplyUserSignature(cryptoHolder, &txLocal)
+
+		err = tb.ApplyRelayerSignature(cryptoHolderRelayer, &txLocal)
+		require.Nil(t, err)
+	})
+}

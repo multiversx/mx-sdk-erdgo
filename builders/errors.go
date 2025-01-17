@@ -46,3 +46,6 @@ var ErrMissingGuardianOption = errors.New("guardian flag is missing in the optio
 
 // ErrGuardianDoesNotMatch signals a mismatch between the configured guardian in tx and the signing guardian address
 var ErrGuardianDoesNotMatch = errors.New("configured guardian does not match signing guardian")
+
+// ErrRelayerDoesNotMatch signals a mismatch between the configured relayer in tx and the signing relayer address
+var ErrRelayerDoesNotMatch = errors.New("configured relayer does not match signing relayer")
