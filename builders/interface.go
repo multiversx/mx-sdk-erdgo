@@ -5,6 +5,7 @@ import (
 
 	"github.com/multiversx/mx-chain-core-go/data/transaction"
 	crypto "github.com/multiversx/mx-chain-crypto-go"
+
 	"github.com/multiversx/mx-sdk-go/core"
 	"github.com/multiversx/mx-sdk-go/data"
 )
@@ -51,4 +52,11 @@ type Signer interface {
 	SignByteSlice(msg []byte, privateKey crypto.PrivateKey) ([]byte, error)
 	VerifyByteSlice(msg []byte, publicKey crypto.PublicKey, sig []byte) error
 	IsInterfaceNil() bool
+}
+
+type RelayedTxV1Builder interface {
+	SetInnerTransaction(tx *transaction.FrontendTransaction) RelayedTxV1Builder
+	SetRelayerAccount(account *data.Account) RelayedTxV1Builder
+	SetNetworkConfig(config *data.NetworkConfig) RelayedTxV1Builder
+	Build() (*transaction.FrontendTransaction, error)
 }

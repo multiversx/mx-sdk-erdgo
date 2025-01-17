@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/multiversx/mx-chain-core-go/data/transaction"
+
 	"github.com/multiversx/mx-sdk-go/core"
 	"github.com/multiversx/mx-sdk-go/data"
 )
@@ -17,7 +18,7 @@ type relayedTxV1Builder struct {
 }
 
 // NewRelayedTxV1Builder creates a new relayed transaction v1 builder
-func NewRelayedTxV1Builder() *relayedTxV1Builder {
+func NewRelayedTxV1Builder() RelayedTxV1Builder {
 	return &relayedTxV1Builder{
 		innerTransaction: nil,
 		relayerAccount:   nil,
@@ -26,21 +27,21 @@ func NewRelayedTxV1Builder() *relayedTxV1Builder {
 }
 
 // SetInnerTransaction sets the inner transaction to be relayed
-func (rtb *relayedTxV1Builder) SetInnerTransaction(tx *transaction.FrontendTransaction) *relayedTxV1Builder {
+func (rtb *relayedTxV1Builder) SetInnerTransaction(tx *transaction.FrontendTransaction) RelayedTxV1Builder {
 	rtb.innerTransaction = tx
 
 	return rtb
 }
 
 // SetRelayerAccount sets the relayer account
-func (rtb *relayedTxV1Builder) SetRelayerAccount(account *data.Account) *relayedTxV1Builder {
+func (rtb *relayedTxV1Builder) SetRelayerAccount(account *data.Account) RelayedTxV1Builder {
 	rtb.relayerAccount = account
 
 	return rtb
 }
 
 // SetNetworkConfig sets the network config
-func (rtb *relayedTxV1Builder) SetNetworkConfig(config *data.NetworkConfig) *relayedTxV1Builder {
+func (rtb *relayedTxV1Builder) SetNetworkConfig(config *data.NetworkConfig) RelayedTxV1Builder {
 	rtb.networkConfig = config
 
 	return rtb
